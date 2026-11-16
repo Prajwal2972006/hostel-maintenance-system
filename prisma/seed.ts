@@ -1,0 +1,4 @@
+import { PrismaClient } from '@prisma/client';
+const prisma=new PrismaClient();
+async function main(){for(const [statusName,description] of [['OPEN','New issue reported'],['ASSIGNED','Assigned to maintenance staff'],['IN_PROGRESS','Work has started'],['RESOLVED','Maintenance work completed'],['CLOSED','Issue confirmed and closed']] as const){await prisma.issueStatus.upsert({where:{statusName},update:{description},create:{statusName,description}});}const hostel=await prisma.hostel.upsert({where:{id:'demo-hostel'},update:{},create:{id:'demo-hostel',hostelName:'Demo Hostel',address:'Update this address'}});await prisma.room.upsert({where:{roomNo:'204'},update:{},create:{roomNo:'204',roomType:'Double Sharing',floor:2,capacity:2,hostelId:hostel.id}});console.log('Seed data created.');}
+main().finally(()=>prisma.$disconnect());

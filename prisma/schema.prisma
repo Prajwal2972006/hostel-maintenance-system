@@ -1,0 +1,116 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  STUDENT
+  WARDEN
+  STAFF
+  ADMIN
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum IssueState {
+  OPEN
+  ASSIGNED
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+model User {
+  id             String             @id @default(cuid())
+  name           String
+  email          String             @unique
+  passwordHash   String
+  phone          String?
+  role           Role               @default(STUDENT)
+  course         String?
+  staffRole      String?
+  roomNo         String?
+  room           Room?              @relation(fields: [roomNo], references: [roomNo])
+  createdAt      DateTime           @default(now())
+  raisedIssues   MaintenanceIssue[] @relation("RaisedIssues")
+  assignedIssues MaintenanceIssue[] @relation("AssignedIssues")
+  feedback       Feedback[]
+  comments       IssueComment[]
+}
+
+model Hostel {
+  id         String   @id @default(cuid())
+  hostelName String
+  address    String
+  rooms      Room[]
+  createdAt  DateTime @default(now())
+}
+
+model Room {
+  roomNo   String @id
+  roomType String
+  floor    Int
+  capacity Int
+  hostelId String
+  hostel   Hostel @relation(fields: [hostelId], references: [id], onDelete: Cascade)
+  students User[]
+}
+
+model IssueStatus {
+  id          String             @id @default(cuid())
+  statusName  IssueState         @unique
+  description String?
+  issues      MaintenanceIssue[]
+}
+
+model MaintenanceIssue {
+  id          String       @id @default(cuid())
+  title       String
+  description String
+  category    String       @default("General")
+  priority    Priority     @default(MEDIUM)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  studentId   String
+  staffId     String?
+  statusId    String
+  student     User         @relation("RaisedIssues", fields: [studentId], references: [id])
+  staff       User?        @relation("AssignedIssues", fields: [staffId], references: [id])
+  status      IssueStatus  @relation(fields: [statusId], references: [id])
+  feedback    Feedback?
+  comments    IssueComment[]
+
+  @@index([studentId])
+  @@index([staffId])
+  @@index([statusId])
+}
+
+model Feedback {
+  id        String           @id @default(cuid())
+  issueId   String           @unique
+  userId    String
+  rating    Int
+  comments  String?
+  createdAt DateTime         @default(now())
+  issue     MaintenanceIssue @relation(fields: [issueId], references: [id], onDelete: Cascade)
+  user      User             @relation(fields: [userId], references: [id])
+}
+
+model IssueComment {
+  id        String           @id @default(cuid())
+  issueId   String
+  userId    String
+  comment   String
+  createdAt DateTime         @default(now())
+  issue     MaintenanceIssue @relation(fields: [issueId], references: [id], onDelete: Cascade)
+  user      User             @relation(fields: [userId], references: [id])
+}
