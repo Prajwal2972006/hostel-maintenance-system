@@ -13,7 +13,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     const { staffId } = z.object({ staffId: z.string().min(1) }).parse(await req.json());
     const staff = await prisma.user.findFirst({ where: { id: staffId, role: 'STAFF' } });
     if (!staff) return NextResponse.json({ error: 'Staff member not found' }, { status: 404 });
-    const assigned = await prisma.maintenanceIssue.update({ where: { id }, data: { staffId, status: { connect: { statusName: 'ASSIGNED' } } }, include: { status: true, staff: { select: { name: true } } } });
+    const assigned = await prisma.maintenanceIssue.update({ where: { id }, data: { staff: { connect: { id: staffId } }, status: { connect: { statusName: 'ASSIGNED' as const } } }, include: { status: true, staff: { select: { name: true } } } });
     await logActivity('ISSUE_ASSIGNED', user.id, { issueId: id, staffId });
     return NextResponse.json(assigned);
   } catch { return NextResponse.json({ error: 'Could not assign issue' }, { status: 400 }); }
